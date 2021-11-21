@@ -2,7 +2,7 @@
 
 ![Screenshot](screenshot.png)
 
-A demo app to show off the capabilities of Castle [Filter and Risk APIs](https://docs.castle.io/v1/reference/api-reference/).
+A demo app to show off the capabilities of Castle [Filter and Risk APIs](https://reference.castle.io/#tag/risk_assessment).
 Castle APIs help developers prevent new account abuse, account takeovers, and transaction fraud.
 
 Create a free account and get API keys at: [dashboard.castle.io/signup/new](https://dashboard.castle.io/signup/new)
