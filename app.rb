@@ -45,22 +45,29 @@ end
 post '/login' do
   # simulate failed login when password is not "password"
   failed = request.params['password'] != 'password'
+  user_data = user_data(request)
 
   # Send successful requests to the Risk API
   if failed
     params = castle_params(request).merge(
       event: '$login',
-      status: '$failed'
+      status: '$failed',
+      user: user_data,
+      authentication_method: {
+        type: '$password'
+      }
     )
 
     castle_response = send_to_castle('filter', params)
     redirect "/?status=login_failed"
   else
-    user_data = user_data(request)
     params = castle_params(request).merge(
       event: '$login',
       status: '$succeeded',
-      user: user_data
+      user: user_data,
+      authentication_method: {
+        type: '$password'
+      }
     )
 
     castle_response = send_to_castle('risk', params)
