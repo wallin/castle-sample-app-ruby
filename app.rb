@@ -1,48 +1,99 @@
 require 'base64'
 require 'castle'
 require 'sinatra'
+require 'sinatra/cookies'
 
 # Configure and initialize the Castle client
 Castle.configure do |config|
   config.api_secret = ENV['CASTLE_API_SECRET']
 end
 
+def user_data(request)
+  {
+    id: Base64.urlsafe_encode64(request.params['email']), # generate fake user ID
+    email: request.params['email']
+  }
+end
+
 $castle = Castle::Client.new
 
 get '/' do
-  castle_response = request.params['response']
+  # Logged in already
+  if cookies[:user_id]
+    return redirect '/overview'
+  end
+
+  castle_response = request.params['status']
   if castle_response
-    @castle_response = JSON.parse(Base64.urlsafe_decode64(castle_response))
+    @message = 'Login Failed. Hint: try "password" as password'
+  elsif ENV['CASTLE_API_SECRET'].nil? || ENV['CASTLE_PUB_KEY'].nil?
+    @message = 'Please set CASTLE_API_SECRET and CASTLE_PUB_KEY in your ENV'
   end
 
   erb :index
 end
 
+get '/overview' do
+  @user_id, @user_email = cookies.values_at(:user_id, :user_email)
+
+  redirect '/' if @user_id.nil?
+
+  erb :overview
+end
+
 # Simulated login endpoint
 post '/login' do
-  params = castle_params(request).merge(
-    event: '$login',
-    status: '$succeeded',
-    user: {
-      id: request.params['email'],
-      email: request.params['email']
-    }
-  )
+  # simulate failed login when password is not "password"
+  failed = request.params['password'] != 'password'
 
-  castle_response = send_to_castle('risk', params)
+  # Send successful requests to the Risk API
+  if failed
+    params = castle_params(request).merge(
+      event: '$login',
+      status: '$failed'
+    )
 
-  redirect "/?response=#{Base64.urlsafe_encode64(JSON.dump(castle_response))}"
+    castle_response = send_to_castle('filter', params)
+    redirect "/?status=login_failed"
+  else
+    user_data = user_data(request)
+    params = castle_params(request).merge(
+      event: '$login',
+      status: '$succeeded',
+      user: user_data
+    )
+
+    castle_response = send_to_castle('risk', params)
+
+    cookies[:user_id] = user_data[:id]
+    cookies[:user_email] = user_data[:email]
+
+    redirect '/overview'
+  end
+end
+
+# Clear user login data
+post '/logout' do
+  cookies.delete(:user_id)
+  cookies.delete(:user_email)
+  redirect '/'
 end
 
 # Simulated registration endpoint
 post '/signup' do
+  user_data = user_data(request)
   params = castle_params(request).merge(
-    event: '$registration'
+    event: '$registration',
+    status: '$succeeded',
+    user: user_data
   )
 
-  castle_response = send_to_castle('filter', params)
+  castle_response = send_to_castle('risk', params)
 
-  redirect "/?response=#{Base64.urlsafe_encode64(JSON.dump(castle_response))}"
+  cookies[:user_id] = user_data[:id]
+  cookies[:user_email] = user_data[:email]
+
+  redirect '/overview'
 end
 
 private

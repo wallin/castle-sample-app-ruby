@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App &middot; Account overview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.3/tailwind.min.css" integrity="sha512-wl80ucxCRpLkfaCnbM88y4AxnutbGk327762eM9E/rRTvY/ZGAHWMZrYUq66VQBYMIYDFpDdJAOGSLyIPHZ2IQ==" crossorigin="anonymous" />
+    <script src="/castle.browser.js"></script>
+</head>
+<body class="bg-gray-100 container mx-auto py-12">
+  <section class="block bg-white p-8 rounded shadow-2xl max-w-sm mx-auto">
+    <svg class="mx-auto fill-current my-4 block w-16 h-16 text-indigo-900" height="164" viewBox="0 0 164 164" width="164" xmlns="http://www.w3.org/2000/svg"><path d="m82 0c-45.2873495 0-82 36.7126505-82 82 0 45.287349 36.7126505 82 82 82 45.287349 0 82-36.712651 82-82 0-21.7477522-8.639261-42.604773-24.017244-57.9827561-15.377983-15.37798299-36.235004-24.0172439-57.982756-24.0172439zm50 84c-6.903559 0-12.5 5.5964406-12.5 12.5v12.5h-75v-12.5c0-6.9035594-5.5964406-12.5-12.5-12.5v-25h25v12.5h12.5v-12.5h25v12.5h12.5v-12.5h25z"/></svg>
+    <h1 class="font-bold text-2xl mb-8 text-center">Welcome!</h1>
+    <form action="/logout" method="post" onsubmit="Castle.injectTokenOnSubmit(event)">
+      <button class="appearance-none outline-none px-6 py-3 rounded-full shadow text-white bg-indigo-900 uppercase tracking-tight text-sm font-bold"
+          type="submit" id="test_risk">
+          Log out
+      </button>
+    </form>
+  </section>
+  <% if @castle_response %>
+  <section class="mt-8 max-w-sm mx-auto">
+    <h1 class="font-bold text-2xl mb-8 text-center">Castle API Response</h1>
+    <code class="block font-mono break-all text-xs mb-8 whitespace-pre">
+<%= JSON.pretty_generate(@castle_response) %>
+    </code>
+  </section>
+  <% end %>
+  <script>
+    window.user = { id: '<%= @user_id %>', email: '<%= @user_email %>' }
+    Castle.configure({ pk: '<%= ENV['CASTLE_PUB_KEY'] %>' })
+    Castle.page({user: window.user})
+  </script>
+</body>
+</html>

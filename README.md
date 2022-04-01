@@ -14,7 +14,7 @@ Create a free account and get API keys at: [dashboard.castle.io/signup/new](http
 ```bash
 bundle install
 
-CASTLE_API_SECRET=your_secret CASTLE_APP_ID=your_app_id bundle exec ruby app.rb
+CASTLE_API_SECRET=your_secret CASTLE_PUB_KEY=pk_your_key bundle exec ruby app.rb
 ```
 
 Navigate to [localhost:4567](http://localhost:4567) to test the Risk ans Filter endpoints. The results will show up in the [Castle Dashboard](https://dashboard.castle.io)
