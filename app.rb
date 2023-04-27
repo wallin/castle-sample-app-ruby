@@ -2,6 +2,7 @@ require 'base64'
 require 'castle'
 require 'sinatra'
 require 'sinatra/cookies'
+require 'digest'
 
 # Configure and initialize the Castle client
 Castle.configure do |config|
@@ -100,6 +101,23 @@ post '/signup' do
   cookies[:user_id] = user_data[:id]
   cookies[:user_email] = user_data[:email]
 
+  redirect '/overview'
+end
+
+# Simulated message post
+post '/messages' do
+  params = castle_params(request).merge(
+    event: '$custom',
+    name: 'message_sent',
+    user: { id: cookies[:user_id], email: cookies[:user_email] },
+    properties: {
+      message_hash: Digest::MD5.hexdigest(request.params['message'])
+    }
+  )
+
+  castle_response = send_to_castle('risk', params)
+
+  status 200
   redirect '/overview'
 end
 

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Castle Test App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.3/tailwind.min.css" integrity="sha512-wl80ucxCRpLkfaCnbM88y4AxnutbGk327762eM9E/rRTvY/ZGAHWMZrYUq66VQBYMIYDFpDdJAOGSLyIPHZ2IQ==" crossorigin="anonymous" />
-    <script src="/castle.browser.js"></script>
+    <script src="https://unpkg.com/@castleio/castle-js@2.1.15/dist/castle.browser.js"></script>
 </head>
 <body class="bg-gray-100 container mx-auto py-12">
   <% if @message %>
@@ -15,10 +15,10 @@
   <section class="block bg-white p-8 rounded shadow-2xl max-w-sm mx-auto">
     <svg class="mx-auto fill-current my-4 block w-16 h-16 text-indigo-900" height="164" viewBox="0 0 164 164" width="164" xmlns="http://www.w3.org/2000/svg"><path d="m82 0c-45.2873495 0-82 36.7126505-82 82 0 45.287349 36.7126505 82 82 82 45.287349 0 82-36.712651 82-82 0-21.7477522-8.639261-42.604773-24.017244-57.9827561-15.377983-15.37798299-36.235004-24.0172439-57.982756-24.0172439zm50 84c-6.903559 0-12.5 5.5964406-12.5 12.5v12.5h-75v-12.5c0-6.9035594-5.5964406-12.5-12.5-12.5v-25h25v12.5h12.5v-12.5h25v12.5h12.5v-12.5h25z"/></svg>
     <h1 class="font-bold text-2xl mb-8 text-center">Test Castle</h1>
-    <form action="/login" method="post" id="form" class="flex flex-col">
+    <form action="/login" method="post" id="form" class="flex flex-col" onsubmit="Castle.injectTokenOnSubmit(event)">
       <div class="mb-4">
           <label for="email" class="tracking-tighter uppercase font-semibold text-xs text-gray-500 block">E-mail</label>
-          <input required class="w-full appearance-none outline-none px-2 py-2 border shadow rounded " type="text" id="email" name="email" placeholder="user@example.com" />
+          <input required class="w-full appearance-none outline-none px-2 py-2 border shadow rounded " type="email" id="email" name="email" placeholder="user@example.com" />
       </div>
       <div class="mb-6">
           <label for="password" class="tracking-tighter uppercase font-semibold text-xs text-gray-500 block">Password</label>
@@ -40,29 +40,6 @@
   </section>
   <script>
     Castle.configure({ pk: '<%= ENV['CASTLE_PUB_KEY'] %>' })
-
-    var form = document.getElementById('form')
-
-    form.onsubmit = function(e) {
-      e.preventDefault();
-
-      form.action = form.endpoint.value;
-
-      Castle.createRequestToken().then(function(requestToken) {
-        // Populate a hidden field called `castle_request_token` with the
-        // request token
-        var hiddenInput = document.createElement('input');
-        hiddenInput.setAttribute('type', 'hidden');
-        hiddenInput.setAttribute('name', 'castle_request_token');
-        hiddenInput.setAttribute('value', requestToken);
-
-        // Add the hidden field to the form so it gets sent to the server
-        // before submitting the form
-        form.appendChild(hiddenInput);
-
-        form.submit();
-      });
-    };
   </script>
 </body>
 </html>
