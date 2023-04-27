@@ -1,0 +1,35 @@
+<form id="config-form" class="flex mb-4" action="/configure" method="POST">
+  <h2 class="mt-1 flex-1 text-xl font-semibold text-slate-300">Request log</h2>
+  <button type="submit" class="py-2 px-4 text-sm font-medium rounded text-white bg-sky-900 hover:bg-sky-800">Reset</button>
+</form>
+
+<ul x-data="logFeed()" id="messages" class="text-xs">
+  <template x-for="item in logItems" :key="item.timestamp">
+    <li x-data="collapsible()" class="bg-slate-900 shadow rounded font-mono p-2 mb-2">
+      <div @click="toggle()" class="cursor-pointer flex text-gray-500" :class=" { 'pb-2': !closed } ">
+        <span class="rounded-full mt-1 mr-2 bg-green-600 w-2 h-2" :class="{ 'bg-red-600': item.response.policy.action == 'deny', 'bg-yellow-600': item.response.policy.action == 'challenge'}"></span>
+        <span class="mr-2" x-text="item.timestamp"></span>
+        <span class="" x-text="item.event + ' ' + item.status"></span>
+      </div>
+      <div x-show="!closed" class="block whitespace-pre font-mono" x-text="JSON.stringify(item.response, null, 2)">
+      </div>
+    </li>
+  </template>
+</ul>
+
+<script>
+  window.logFeed = function() {
+    const logItems = [];
+    let reactiveData = Alpine.reactive(logItems)
+    const self = this;
+    const socket = new WebSocket('ws://' + window.location.host + '/ws');
+
+    socket.onmessage = (event) => {
+      reactiveData.unshift(JSON.parse(event.data))
+    };
+
+    return  {
+      logItems: logItems
+    };
+  };
+</script>

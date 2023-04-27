@@ -18,7 +18,7 @@
     <form action="/login" method="post" id="form" class="flex flex-col">
       <div class="mb-4">
           <label for="email" class="tracking-tighter uppercase font-semibold text-xs text-gray-500 block">E-mail</label>
-          <input required class="w-full appearance-none outline-none px-2 py-2 border shadow rounded " type="text" id="email" name="email" placeholder="user@example.com" />
+          <input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required class="w-full appearance-none outline-none px-2 py-2 border shadow rounded " type="text" id="email" name="email" placeholder="user@example.com" />
       </div>
       <div class="mb-6">
           <label for="password" class="tracking-tighter uppercase font-semibold text-xs text-gray-500 block">Password</label>
@@ -39,7 +39,7 @@
     </form>
   </section>
   <script>
-    Castle.configure({ pk: '<%= ENV['CASTLE_PUB_KEY'] %>' })
+    Castle.configure({ pk: '<%= session['pub_key'] || ENV['CASTLE_PUB_KEY'] %>' })
 
     var form = document.getElementById('form')
 

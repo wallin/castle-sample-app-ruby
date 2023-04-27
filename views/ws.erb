@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Test Castle</title>
+  <script src="//unpkg.com/alpinejs" defer></script>
+</head>
+<body class="m-0 p-0 min-h-screen h-full overflow-hidden ">
+  <div id="container" class="min-h-screen flex" x-data="collapsible(false)" >
+    <div id="iframe-container" class="flex-1 relative" :class="{ 'w-full': closed, 'flex-1': !closed }">
+      <iframe class="border-none h-screen w-full" src="/"></iframe>
+      <div @click="toggle()" id="collapse-button" class="absolute top-3 right-3 cursor-pointer" x-text="closed ? '<<' : '>>'"></div>
+    </div>
+    <div id="sidebar" :class=" { 'w-1/2': !closed, 'w-0': closed } " class="text-slate-500 bg-slate-800 border-l border-gray-300 p-4 transition-all h-screen">
+      <% if session[:api_key] && session[:pub_key] %>
+      <%= erb :_log %>
+      <% else %>
+      <%= erb :_configuration %>
+      <% end %>
+    </div>
+  </div>
+  <script>
+    window.collapsible = function(state) {
+      return {
+        closed: state == undefined ? true : false,
+        toggle() {
+          this.closed = !this.closed;
+        },
+      };
+    };
+  </script>
+</body>
+</html>
