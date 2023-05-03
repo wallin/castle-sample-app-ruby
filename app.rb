@@ -8,11 +8,24 @@ require 'digest'
 
 Faye::WebSocket.load_adapter('puma')
 
-$connections = []
+$connections = {}
 
 configure do
   enable :sessions
   set :session_secret, ENV.fetch('SESSION_SECRET', 'default_secret')
+end
+
+def send_to_client(client_id, endpoint, params, resp)
+  return unless $connections[client_id]
+
+  message = {
+    event: params[:event],
+    endpoint: endpoint,
+    status: params[:status] || params[:name],
+    timestamp: Time.now.utc.iso8601.to_s,
+    response: resp.to_h
+  }
+  $connections[client_id].send(JSON.generate(message))
 end
 
 def user_data(request)
@@ -30,15 +43,14 @@ get '/' do
     return redirect '/overview'
   end
 
-  castle_response = request.params['status']
-  if castle_response
-    @message = 'Login Failed. Hint: try "password" as password'
-  elsif (session['api_key'] || ENV['CASTLE_API_SECRET']).nil? || (session['pub_key'] || ENV['CASTLE_PUB_KEY']).nil?
+
+  if (session['api_key'] || ENV['CASTLE_API_SECRET']).nil? || (session['pub_key'] || ENV['CASTLE_PUB_KEY']).nil?
     @message = 'Please set CASTLE_API_SECRET and CASTLE_PUB_KEY in your ENV'
   end
 
-  erb :index
+  erb :home
 end
+
 
 get '/overview' do
   @user_id, @user_email = cookies.values_at(:user_id, :user_email)
@@ -46,6 +58,15 @@ get '/overview' do
   redirect '/' if @user_id.nil?
 
   erb :overview
+end
+
+get '/login' do
+  castle_response = request.params['status']
+  if castle_response
+    @message = 'Login Failed. Hint: try "password" as password'
+  end
+
+  erb :login
 end
 
 # Simulated login endpoint
@@ -65,8 +86,8 @@ post '/login' do
       }
     )
 
-    castle_response = send_to_castle('filter', params)
-    redirect "/?status=login_failed"
+    castle_response = send_to_castle('filter', params, cookies[:client_id])
+    redirect "/login?status=login_failed"
   else
     params = castle_params(request).merge(
       event: '$login',
@@ -77,7 +98,7 @@ post '/login' do
       }
     )
 
-    castle_response = send_to_castle('risk', params)
+    castle_response = send_to_castle('risk', params, cookies[:client_id])
 
     cookies[:user_id] = user_data[:id]
     cookies[:user_email] = user_data[:email]
@@ -93,6 +114,10 @@ post '/logout' do
   redirect '/'
 end
 
+get '/signup' do
+  erb :signup
+end
+
 # Simulated registration endpoint
 post '/signup' do
   user_data = user_data(request)
@@ -102,7 +127,7 @@ post '/signup' do
     user: user_data
   )
 
-  castle_response = send_to_castle('risk', params)
+  castle_response = send_to_castle('risk', params, cookies[:client_id])
 
   cookies[:user_id] = user_data[:id]
   cookies[:user_email] = user_data[:email]
@@ -113,23 +138,21 @@ end
 ############################## Admin related
 
 get '/admin' do
-  erb :ws
+  erb :admin
 end
 
 get '/ws' do
   if Faye::WebSocket.websocket?(request.env)
     ws = Faye::WebSocket.new(request.env)
 
-    ws.on :open do |_event|
-      $connections << ws
+    ws.on :open do
+      client_id = SecureRandom.uuid
+      $connections[client_id] = ws
+      ws.send(JSON.generate(handshake: true, client_id: client_id))
     end
 
-    ws.on :message do |event|
-      $connections.each { |conn| conn.send(event.data) }
-    end
-
-    ws.on :close do |_event|
-      $connections.delete(ws)
+    ws.on :close do
+      $connections.delete_if { |_, s| s == ws }
     end
 
     ws.rack_response
@@ -167,7 +190,7 @@ post '/messages' do
     }
   )
 
-  castle_response = send_to_castle('risk', params)
+  castle_response = send_to_castle('risk', params, cookies[:client_id])
 
   status 200
   redirect '/overview'
@@ -188,20 +211,14 @@ def castle_params(request)
   }
 end
 
-def send_to_castle(endpoint, params)
+def send_to_castle(endpoint, params, client_id = nil)
   # Configure and initialize the Castle client
   Castle.configure do |config|
     config.api_secret = session[:api_key] || ENV['CASTLE_API_SECRET']
   end
 
   resp = $castle.public_send(endpoint, params)
-  message = {
-    event: params[:event],
-    status: params[:status] || params[:name],
-    timestamp: Time.now.utc.iso8601.to_s,
-    response: resp.to_h
-  }
-  $connections.each { |conn| conn.send(JSON.dump(message)) }
+  send_to_client(client_id, "POST /v1/#{endpoint}", params, resp)
 # rescue => e
 #  $connections.each { |conn| conn.send(e.message) }
 end

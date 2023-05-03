@@ -1,3 +1,20 @@
+<style type="text/css">
+  @keyframes push-and-fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .message {
+    animation: push-and-fade-in 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+</style>
+
 <form id="config-form" class="flex mb-4" action="/configure" method="POST">
   <h2 class="mt-1 flex-1 text-xl font-semibold text-slate-300">Request log</h2>
   <button type="submit" class="py-2 px-4 text-sm font-medium rounded text-white bg-sky-900 hover:bg-sky-800">Reset</button>
@@ -5,11 +22,12 @@
 
 <ul x-data="logFeed()" id="messages" class="text-xs">
   <template x-for="item in logItems" :key="item.timestamp">
-    <li x-data="collapsible()" class="bg-slate-900 shadow rounded font-mono p-2 mb-2">
+    <li x-data="collapsible()" class="message bg-slate-900 shadow rounded font-mono p-2 mb-2">
       <div @click="toggle()" class="cursor-pointer flex text-gray-500" :class=" { 'pb-2': !closed } ">
         <span class="rounded-full mt-1 mr-2 bg-green-600 w-2 h-2" :class="{ 'bg-red-600': item.response.policy.action == 'deny', 'bg-yellow-600': item.response.policy.action == 'challenge'}"></span>
-        <span class="mr-2" x-text="item.timestamp"></span>
-        <span class="" x-text="item.event + ' ' + item.status"></span>
+        <span class="mr-4" x-text="item.endpoint"></span>
+        <span class="mr-4" x-text="item.event + ' ' + item.status"></span>
+        <span class="flex-1 text-right" x-text="item.timestamp"></span>
       </div>
       <div x-show="!closed" class="block whitespace-pre font-mono" x-text="JSON.stringify(item.response, null, 2)">
       </div>
@@ -25,7 +43,12 @@
     const socket = new WebSocket('ws://' + window.location.host + '/ws');
 
     socket.onmessage = (event) => {
-      reactiveData.unshift(JSON.parse(event.data))
+      const data = JSON.parse(event.data);
+      if (data.handshake) {
+        document.cookie = "client_id=" + data.client_id;
+      } else {
+        reactiveData.unshift(JSON.parse(event.data))
+      }
     };
 
     return  {

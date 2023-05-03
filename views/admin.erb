@@ -11,9 +11,9 @@
   <div id="container" class="min-h-screen flex" x-data="collapsible(false)" >
     <div id="iframe-container" class="flex-1 relative" :class="{ 'w-full': closed, 'flex-1': !closed }">
       <iframe class="border-none h-screen w-full" src="/"></iframe>
-      <div @click="toggle()" id="collapse-button" class="absolute top-3 right-3 cursor-pointer" x-text="closed ? '<<' : '>>'"></div>
+      <!-- <div @click="toggle()" id="collapse-button" class="absolute top-3 right-3 cursor-pointer" x-text="closed ? '<<' : '>>'"></div> -->
     </div>
-    <div id="sidebar" :class=" { 'w-1/2': !closed, 'w-0': closed } " class="text-slate-500 bg-slate-800 border-l border-gray-300 p-4 transition-all h-screen">
+    <div id="sidebar" :class=" { 'w-1/3': !closed, 'w-0': closed } " class="text-slate-500 bg-slate-800 p-4 transition-all h-screen">
       <% if session[:api_key] && session[:pub_key] %>
       <%= erb :_log %>
       <% else %>
